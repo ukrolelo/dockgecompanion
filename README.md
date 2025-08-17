@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 # 🐳 Dockge Companion
 
 **A comprehensive Docker container digest monitoring and management tool with both command-line and web interfaces.**
