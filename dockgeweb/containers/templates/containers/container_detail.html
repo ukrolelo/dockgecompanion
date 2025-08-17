@@ -1,0 +1,336 @@
+{% extends 'containers/base.html' %}
+
+{% block title %}{{ container_name }} - Container Detail{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'containers:dashboard' %}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'containers:container_status' %}">Containers</a></li>
+                <li class="breadcrumb-item active">{{ container_name }}</li>
+            </ol>
+        </nav>
+        
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-cube me-2"></i>{{ container_name }}</h1>
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-primary" onclick="backupCurrentVersion()">
+                    <i class="fas fa-save me-1"></i>Backup Current
+                </button>
+                <button type="button" class="btn btn-warning" onclick="checkContainerUpdates()">
+                    <i class="fas fa-search me-1"></i>Check Updates
+                </button>
+                <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#rollbackModal">
+                    <i class="fas fa-undo me-1"></i>Rollback Options
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if error %}
+<div class="row">
+    <div class="col-12">
+        <div class="alert alert-danger" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Error:</strong> {{ error }}
+        </div>
+    </div>
+</div>
+{% else %}
+
+<!-- Container Information -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="fas fa-info-circle me-2"></i>Container Information</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <td><strong>Image:</strong></td>
+                        <td><code>{{ container_info.image_name }}:{{ container_info.image_tag }}</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Service:</strong></td>
+                        <td>{{ container_info.service_name|default:"N/A" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Project:</strong></td>
+                        <td>
+                            {% if container_info.project_name %}
+                                <span class="badge bg-secondary">{{ container_info.project_name }}</span>
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Current Digest:</strong></td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <code class="me-2">{{ container_info.image_name }}@{{ container_info.digest }}</code>
+                                <button class="btn btn-sm btn-outline-secondary"
+                                        onclick="copyToClipboard('{{ container_info.image_name }}@{{ container_info.digest }}')"
+                                        data-bs-toggle="tooltip" title="Copy image reference">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Status:</strong></td>
+                        <td>
+                            {% if is_running %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-play me-1"></i>Running
+                                </span>
+                            {% else %}
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-stop me-1"></i>Stopped
+                                </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="fas fa-download me-2"></i>Update Status</h5>
+            </div>
+            <div class="card-body" id="update-status">
+                {% if update_info %}
+                    {% if update_info.update_available %}
+                        <div class="alert alert-warning mb-0">
+                            <i class="fas fa-arrow-up me-2"></i>
+                            <strong>Update Available!</strong>
+                            <br><small>Remote: {{ update_info.remote_digest|slice:":12" }}...</small>
+                        </div>
+                    {% elif update_info.error %}
+                        <div class="alert alert-danger mb-0">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Error:</strong> {{ update_info.error }}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-success mb-0">
+                            <i class="fas fa-check me-2"></i>
+                            <strong>Up to date</strong>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="text-muted text-center">
+                        <i class="fas fa-question-circle fa-2x mb-2"></i>
+                        <br>Click "Check Updates" to see status
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Changes -->
+{% if digest_changes %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0"><i class="fas fa-history me-2"></i>Recent Changes</h5>
+                <a href="{% url 'containers:container_history' container_name %}" class="btn btn-sm btn-outline-primary">
+                    View All ({{ total_changes }})
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>From</th>
+                                <th>To</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for change in digest_changes %}
+                            <tr>
+                                <td>{{ change.change_timestamp|date:"d.m.Y" }}</td>
+                                <td>{{ change.change_timestamp|date:"H:i:s" }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <code class="me-2 small">{{ container_info.image_name }}@{{ change.old_digest }}</code>
+                                        <button class="btn btn-sm btn-outline-secondary"
+                                                onclick="copyToClipboard('{{ container_info.image_name }}@{{ change.old_digest }}')"
+                                                data-bs-toggle="tooltip" title="Copy image reference">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <code class="me-2 small">{{ container_info.image_name }}@{{ change.new_digest }}</code>
+                                        <button class="btn btn-sm btn-outline-secondary"
+                                                onclick="copyToClipboard('{{ container_info.image_name }}@{{ change.new_digest }}')"
+                                                data-bs-toggle="tooltip" title="Copy image reference">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="row">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            No digest changes recorded for this container.
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endif %}
+
+<!-- Rollback Modal -->
+<div class="modal fade" id="rollbackModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-undo me-2"></i>Rollback Options</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                {% if digest_changes %}
+                <div class="rollback-instructions mb-4">
+                    <h6><i class="fas fa-info-circle me-2"></i>Rollback Instructions</h6>
+                    <ol>
+                        <li>Note the digest you want to rollback to from the table below</li>
+                        <li>Update your docker-compose.yml:
+                            <br>Change: <code>image: nginx:latest</code>
+                            <br>To: <code>image: nginx@sha256:digest-here</code>
+                        </li>
+                        <li>Run: <code>docker-compose up -d</code></li>
+                        <li>Run: <code>python dockge_companion.py scan</code> to record the change</li>
+                    </ol>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Digest</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for change in digest_changes|slice:":10" %}
+                            <tr>
+                                <td>{{ change.change_timestamp|date:"d.m.Y" }}</td>
+                                <td>{{ change.change_timestamp|date:"H:i:s" }}</td>
+                                <td>
+                                    <code class="small">{{ container_info.image_name }}@{{ change.old_digest }}</code>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary"
+                                            onclick="copyToClipboard('{{ container_info.image_name }}@{{ change.old_digest }}')"
+                                            data-bs-toggle="tooltip" title="Copy image reference">
+                                        <i class="fas fa-copy me-1"></i>Copy
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    No previous versions available for rollback.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function backupCurrentVersion() {
+    showLoading('Backing up current version...');
+    
+    makeRequest('/api/scan/', { method: 'POST' })
+        .then(data => {
+            hideLoading();
+            if (data.success) {
+                showAlert('Current version backed up successfully!', 'success');
+                // Refresh the page to show updated data
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                showAlert('Backup failed: ' + data.error, 'danger');
+            }
+        })
+        .catch(() => {
+            hideLoading();
+        });
+}
+
+function checkContainerUpdates() {
+    showLoading('Checking for updates...');
+    
+    makeRequest('/api/container/{{ container_name }}/updates/')
+        .then(data => {
+            hideLoading();
+            if (data.success) {
+                const container = data.container;
+                let html = '';
+                
+                if (container.update_available) {
+                    html = `
+                        <div class="alert alert-warning mb-0">
+                            <i class="fas fa-arrow-up me-2"></i>
+                            <strong>Update Available!</strong>
+                            <br><small>Remote: ${container.remote_digest.substring(0, 12)}...</small>
+                        </div>
+                    `;
+                } else if (container.error) {
+                    html = `
+                        <div class="alert alert-danger mb-0">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Error:</strong> ${container.error}
+                        </div>
+                    `;
+                } else {
+                    html = `
+                        <div class="alert alert-success mb-0">
+                            <i class="fas fa-check me-2"></i>
+                            <strong>Up to date</strong>
+                        </div>
+                    `;
+                }
+                
+                document.getElementById('update-status').innerHTML = html;
+                showAlert('Update check completed', 'success', 2000);
+            } else {
+                showAlert('Update check failed: ' + data.error, 'danger');
+            }
+        })
+        .catch(() => {
+            hideLoading();
+        });
+}
+</script>
+{% endblock %}

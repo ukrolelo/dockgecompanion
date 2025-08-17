@@ -1,0 +1,240 @@
+{% extends 'containers/base.html' %}
+
+{% block title %}{{ container_name }} - History{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'containers:dashboard' %}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'containers:container_status' %}">Containers</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'containers:container_detail' container_name %}">{{ container_name }}</a></li>
+                <li class="breadcrumb-item active">History</li>
+            </ol>
+        </nav>
+        
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-history me-2"></i>{{ container_name }} - History</h1>
+            <a href="{% url 'containers:container_detail' container_name %}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left me-1"></i>Back to Container
+            </a>
+        </div>
+    </div>
+</div>
+
+{% if error %}
+<div class="row">
+    <div class="col-12">
+        <div class="alert alert-danger" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Error:</strong> {{ error }}
+        </div>
+    </div>
+</div>
+{% else %}
+
+<!-- Container Information Summary -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="fas fa-info-circle me-2"></i>Container Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-borderless table-sm">
+                            <tr>
+                                <td><strong>Image:</strong></td>
+                                <td><code>{{ container_info.image_name }}:{{ container_info.image_tag }}</code></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Service:</strong></td>
+                                <td>{{ container_info.service_name|default:"N/A" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Project:</strong></td>
+                                <td>
+                                    {% if container_info.project_name %}
+                                        <span class="badge bg-secondary">{{ container_info.project_name }}</span>
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-borderless table-sm">
+                            <tr>
+                                <td><strong>Current Digest:</strong></td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <code class="me-2">{{ container_info.image_name }}@{{ container_info.digest }}</code>
+                                        <button class="btn btn-sm btn-outline-secondary"
+                                                onclick="copyToClipboard('{{ container_info.image_name }}@{{ container_info.digest }}')"
+                                                data-bs-toggle="tooltip" title="Copy image reference">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Status:</strong></td>
+                                <td>
+                                    {% if is_running %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-play me-1"></i>Running
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-danger">
+                                            <i class="fas fa-stop me-1"></i>Stopped
+                                        </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Total Changes:</strong></td>
+                                <td><span class="badge bg-info">{{ total_changes }}</span></td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Digest Change History -->
+{% if digest_changes %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-list me-2"></i>Digest Change History ({{ digest_changes|length }} changes)
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>#</th>
+                                <th><i class="fas fa-calendar me-1"></i>Date</th>
+                                <th><i class="fas fa-clock me-1"></i>Time</th>
+                                <th><i class="fas fa-arrow-left me-1"></i>From</th>
+                                <th><i class="fas fa-arrow-right me-1"></i>To</th>
+                                <th class="text-center"><i class="fas fa-tools me-1"></i>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for change in digest_changes %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ change.change_timestamp|date:"d.m.Y" }}</td>
+                                <td>{{ change.change_timestamp|date:"H:i:s" }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <code class="me-2 small">{{ container_info.image_name }}@{{ change.old_digest }}</code>
+                                        <button class="btn btn-sm btn-outline-secondary"
+                                                onclick="copyToClipboard('{{ container_info.image_name }}@{{ change.old_digest }}')"
+                                                data-bs-toggle="tooltip" title="Copy image reference">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <code class="me-2 small">{{ container_info.image_name }}@{{ change.new_digest }}</code>
+                                        <button class="btn btn-sm btn-outline-secondary"
+                                                onclick="copyToClipboard('{{ container_info.image_name }}@{{ change.new_digest }}')"
+                                                data-bs-toggle="tooltip" title="Copy image reference">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-outline-info"
+                                            onclick="showRollbackInstructions('{{ change.old_digest }}')"
+                                            data-bs-toggle="tooltip" title="Show rollback instructions">
+                                        <i class="fas fa-undo"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="row">
+    <div class="col-12">
+        <div class="alert alert-info text-center">
+            <i class="fas fa-info-circle fa-2x mb-3"></i>
+            <h4>No digest changes recorded</h4>
+            <p>This container has no recorded digest changes in the tracking database.</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endif %}
+
+<!-- Rollback Instructions Modal -->
+<div class="modal fade" id="rollbackModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-undo me-2"></i>Rollback Instructions</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="rollback-instructions mb-4">
+                    <h6><i class="fas fa-info-circle me-2"></i>How to rollback to this version:</h6>
+                    <ol>
+                        <li>Update your docker-compose.yml file</li>
+                        <li>Change from: <code>image: {{ container_info.image_name }}:{{ container_info.image_tag }}</code></li>
+                        <li>To: <code>image: {{ container_info.image_name }}@<span id="rollback-digest"></span></code></li>
+                        <li>Run: <code>docker-compose up -d</code></li>
+                        <li>Run: <code>python dockge_companion.py scan</code> to record the change</li>
+                    </ol>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Warning:</strong> Make sure to backup your current configuration before performing a rollback.
+                </div>
+                
+                <div class="d-flex justify-content-between">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="copyRollbackCommand()">
+                        <i class="fas fa-copy me-1"></i>Copy Image Reference
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentRollbackDigest = '';
+
+function showRollbackInstructions(digest) {
+    currentRollbackDigest = digest;
+    document.getElementById('rollback-digest').textContent = digest;
+    
+    const modal = new bootstrap.Modal(document.getElementById('rollbackModal'));
+    modal.show();
+}
+
+function copyRollbackCommand() {
+    const imageRef = `{{ container_info.image_name }}@${currentRollbackDigest}`;
+    copyToClipboard(imageRef);
+}
+</script>
+{% endblock %}

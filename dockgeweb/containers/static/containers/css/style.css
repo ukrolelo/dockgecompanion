@@ -1,0 +1,200 @@
+/* Custom styles for Dockge Companion Web */
+
+:root {
+    --bs-primary: #0d6efd;
+    --bs-success: #198754;
+    --bs-warning: #ffc107;
+    --bs-danger: #dc3545;
+    --bs-info: #0dcaf0;
+}
+
+/* Status indicators */
+.status-running {
+    color: var(--bs-success);
+}
+
+.status-stopped {
+    color: var(--bs-danger);
+}
+
+.update-available {
+    color: var(--bs-warning);
+}
+
+.update-latest {
+    color: var(--bs-success);
+}
+
+.update-error {
+    color: var(--bs-danger);
+}
+
+/* Container cards */
+.container-card {
+    transition: transform 0.2s ease-in-out;
+    border-left: 4px solid transparent;
+}
+
+.container-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.container-card.running {
+    border-left-color: var(--bs-success);
+}
+
+.container-card.stopped {
+    border-left-color: var(--bs-danger);
+}
+
+/* Action buttons */
+.btn-action {
+    margin: 0.125rem;
+}
+
+/* Loading states */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* Responsive table */
+.table-responsive {
+    border-radius: 0.375rem;
+}
+
+/* Status badges */
+.badge-status {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.75rem;
+}
+
+/* Digest display */
+.digest-short {
+    font-family: 'Courier New', monospace;
+    font-size: 0.875rem;
+    background-color: rgba(var(--bs-secondary-rgb), 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+}
+
+/* History timeline */
+.timeline {
+    position: relative;
+    padding-left: 2rem;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 0.5rem;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: var(--bs-border-color);
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -2rem;
+    top: 0.5rem;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: var(--bs-primary);
+    border: 2px solid var(--bs-body-bg);
+}
+
+/* Statistics cards */
+.stat-card {
+    background: linear-gradient(135deg, var(--bs-primary), var(--bs-info));
+    color: white;
+    border: none;
+}
+
+.stat-card .card-body {
+    padding: 1.5rem;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+    line-height: 1;
+}
+
+/* Auto-refresh indicator */
+.auto-refresh {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 1000;
+}
+
+/* Dark theme adjustments */
+[data-bs-theme="dark"] .container-card {
+    background-color: var(--bs-dark);
+    border-color: var(--bs-border-color-translucent);
+}
+
+[data-bs-theme="dark"] .digest-short {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Light theme adjustments */
+[data-bs-theme="light"] .container-card {
+    background-color: var(--bs-light);
+}
+
+[data-bs-theme="light"] .digest-short {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .container-fluid {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    .btn-action {
+        margin: 0.25rem 0;
+        width: 100%;
+    }
+    
+    .stat-number {
+        font-size: 1.5rem;
+    }
+}
+
+/* Animation for updates */
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.updating {
+    animation: pulse 1.5s infinite;
+}
+
+/* Rollback instructions */
+.rollback-instructions {
+    background-color: rgba(var(--bs-info-rgb), 0.1);
+    border-left: 4px solid var(--bs-info);
+    padding: 1rem;
+    border-radius: 0.375rem;
+}
+
+.rollback-instructions code {
+    background-color: rgba(var(--bs-dark-rgb), 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+}

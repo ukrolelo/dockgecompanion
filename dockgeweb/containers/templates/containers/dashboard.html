@@ -1,0 +1,189 @@
+{% extends 'containers/base.html' %}
+
+{% block title %}Dashboard - Dockge Companion Web{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-tachometer-alt me-2"></i>Dashboard</h1>
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-primary" onclick="scanContainers()">
+                    <i class="fas fa-sync me-1"></i>Scan Containers
+                </button>
+                <button type="button" class="btn btn-warning" onclick="checkUpdates()">
+                    <i class="fas fa-search me-1"></i>Check Updates
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if error %}
+<div class="row">
+    <div class="col-12">
+        <div class="alert alert-danger" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Error:</strong> {{ error }}
+        </div>
+    </div>
+</div>
+{% else %}
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card">
+            <div class="card-body text-center">
+                <i class="fas fa-cubes fa-2x mb-2"></i>
+                <div class="stat-number">{{ total_containers }}</div>
+                <div class="small">Total Containers</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-play-circle fa-2x mb-2"></i>
+                <div class="stat-number">{{ running_containers }}</div>
+                <div class="small">Running</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-stop-circle fa-2x mb-2"></i>
+                <div class="stat-number">{{ stopped_containers }}</div>
+                <div class="small">Stopped</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-history fa-2x mb-2"></i>
+                <div class="stat-number">{{ recent_changes|length }}</div>
+                <div class="small">Recent Changes</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="fas fa-bolt me-2"></i>Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-2">
+                        <a href="{% url 'containers:container_status' %}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-list me-2"></i>View All Containers
+                        </a>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <a href="{% url 'containers:generate_report' %}" class="btn btn-outline-info w-100">
+                            <i class="fas fa-chart-bar me-2"></i>Generate Report
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Containers -->
+{% if containers %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0"><i class="fas fa-cubes me-2"></i>Recent Containers</h5>
+                <a href="{% url 'containers:container_status' %}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for container in containers %}
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card container-card {% if container.is_running %}running{% else %}stopped{% endif %}">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fas fa-cube me-1"></i>{{ container.container_name }}
+                                </h6>
+                                <p class="card-text small text-muted">{{ container.image }}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="badge {% if container.is_running %}bg-success{% else %}bg-danger{% endif %}">
+                                        {% if container.is_running %}
+                                            <i class="fas fa-play me-1"></i>Running
+                                        {% else %}
+                                            <i class="fas fa-stop me-1"></i>Stopped
+                                        {% endif %}
+                                    </span>
+                                    <a href="{% url 'containers:container_detail' container.container_name %}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Recent Changes -->
+{% if recent_changes %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="fas fa-history me-2"></i>Recent Changes</h5>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    {% for change in recent_changes %}
+                    <div class="timeline-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">{{ change.container_name }}</h6>
+                                <div class="mb-2">
+                                    <div class="d-flex align-items-center mb-1">
+                                        <small class="text-muted me-2">From:</small>
+                                        <code class="small me-2">{{ change.image_name }}@{{ change.old_digest }}</code>
+                                        <button class="btn btn-sm btn-outline-secondary"
+                                                onclick="copyToClipboard('{{ change.image_name }}@{{ change.old_digest }}')"
+                                                data-bs-toggle="tooltip" title="Copy image reference">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                    <div class="d-flex align-items-center">
+                                        <small class="text-muted me-2">To:</small>
+                                        <code class="small me-2">{{ change.image_name }}@{{ change.new_digest }}</code>
+                                        <button class="btn btn-sm btn-outline-secondary"
+                                                onclick="copyToClipboard('{{ change.image_name }}@{{ change.new_digest }}')"
+                                                data-bs-toggle="tooltip" title="Copy image reference">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <small class="text-muted">{{ change.change_timestamp|date:"d.m.Y H:i" }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endif %}
+{% endblock %}

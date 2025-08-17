@@ -1,0 +1,249 @@
+{% extends 'containers/base.html' %}
+
+{% block title %}Settings - Dockge Companion Web{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-cog me-2"></i>Settings & Configuration</h1>
+        </div>
+    </div>
+</div>
+
+{% if error %}
+<div class="row">
+    <div class="col-12">
+        <div class="alert alert-danger" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Error:</strong> {{ error }}
+        </div>
+    </div>
+</div>
+{% else %}
+
+<!-- System Status -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="fas fa-heartbeat me-2"></i>System Status</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <td><strong>Docker Status:</strong></td>
+                        <td>
+                            {% if docker_available %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check me-1"></i>Available
+                                </span>
+                            {% else %}
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-times me-1"></i>Not Available
+                                </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Web Interface:</strong></td>
+                        <td>
+                            <span class="badge bg-success">
+                                <i class="fas fa-check me-1"></i>Running
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Database:</strong></td>
+                        <td>
+                            <span class="badge bg-success">
+                                <i class="fas fa-check me-1"></i>Connected
+                            </span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="fas fa-info-circle me-2"></i>Configuration</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <td><strong>Database Location:</strong></td>
+                        <td><code>{{ database_path }}</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Docker Socket:</strong></td>
+                        <td><code>{{ docker_socket }}</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Theme:</strong></td>
+                        <td>
+                            <span id="current-theme">Dark</span>
+                            <button class="btn btn-sm btn-outline-secondary ms-2" onclick="toggleThemeDisplay()">
+                                <i class="fas fa-sync"></i>
+                            </button>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Available Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="fas fa-tools me-2"></i>Available Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-primary">
+                            <div class="card-body text-center">
+                                <i class="fas fa-sync fa-2x text-primary mb-3"></i>
+                                <h6>Scan Containers</h6>
+                                <p class="small text-muted">Scan all containers and update the database</p>
+                                <button class="btn btn-primary" onclick="scanContainers()">
+                                    <i class="fas fa-sync me-1"></i>Run Scan
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-warning">
+                            <div class="card-body text-center">
+                                <i class="fas fa-download fa-2x text-warning mb-3"></i>
+                                <h6>Check Updates</h6>
+                                <p class="small text-muted">Check all containers for available updates</p>
+                                <button class="btn btn-warning" onclick="checkUpdates()">
+                                    <i class="fas fa-search me-1"></i>Check Updates
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-info">
+                            <div class="card-body text-center">
+                                <i class="fas fa-chart-bar fa-2x text-info mb-3"></i>
+                                <h6>Generate Report</h6>
+                                <p class="small text-muted">Generate a comprehensive status report</p>
+                                <a href="{% url 'containers:generate_report' %}" class="btn btn-info">
+                                    <i class="fas fa-chart-bar me-1"></i>View Report
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-secondary">
+                            <div class="card-body text-center">
+                                <i class="fas fa-list fa-2x text-secondary mb-3"></i>
+                                <h6>Container Status</h6>
+                                <p class="small text-muted">View detailed status of all containers</p>
+                                <a href="{% url 'containers:container_status' %}" class="btn btn-secondary">
+                                    <i class="fas fa-list me-1"></i>View Status
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Information Panel -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="fas fa-question-circle me-2"></i>About Dockge Companion</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <p>
+                            Dockge Companion is a Docker container digest monitoring tool that helps you track 
+                            changes to your container images over time. It provides both command-line and web 
+                            interfaces for managing your container infrastructure.
+                        </p>
+                        
+                        <h6><i class="fas fa-star me-2"></i>Key Features:</h6>
+                        <ul>
+                            <li>Track container digest changes automatically</li>
+                            <li>Check for available image updates</li>
+                            <li>View detailed container history</li>
+                            <li>Generate comprehensive reports</li>
+                            <li>Get rollback instructions for previous versions</li>
+                            <li>Web and command-line interfaces</li>
+                        </ul>
+                        
+                        <h6><i class="fas fa-terminal me-2"></i>Command Line Usage:</h6>
+                        <div class="bg-dark text-light p-3 rounded">
+                            <code>
+                                # Initialize tracking<br>
+                                python dockge_companion.py init<br><br>
+                                # Scan containers<br>
+                                python dockge_companion.py scan<br><br>
+                                # Check for updates<br>
+                                python dockge_companion.py check-updates<br><br>
+                                # View status<br>
+                                python dockge_companion.py status<br><br>
+                                # Start TUI<br>
+                                python dockge_companion_tui.py
+                            </code>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-lightbulb me-2"></i>Tips</h6>
+                            <ul class="small mb-0">
+                                <li>Run regular scans to track changes</li>
+                                <li>Check for updates periodically</li>
+                                <li>Use the auto-refresh feature on status pages</li>
+                                <li>Copy digest values for rollback operations</li>
+                                <li>Monitor the recent changes for activity</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <h6><i class="fas fa-exclamation-triangle me-2"></i>Important</h6>
+                            <p class="small mb-0">
+                                Always backup your docker-compose.yml files before 
+                                performing rollback operations. Test rollbacks in 
+                                development environments first.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endif %}
+
+<script>
+function toggleThemeDisplay() {
+    const currentTheme = document.documentElement.getAttribute('data-bs-theme');
+    document.getElementById('current-theme').textContent = 
+        currentTheme.charAt(0).toUpperCase() + currentTheme.slice(1);
+}
+
+// Initialize theme display
+document.addEventListener('DOMContentLoaded', function() {
+    toggleThemeDisplay();
+});
+</script>
+{% endblock %}
