@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🐳 Dockge Companion
 
 **A comprehensive Docker container digest monitoring and management tool with both command-line and web interfaces.**
@@ -240,4 +241,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Made with ❤️ for the Dockge community**
+**Made with ❤️ for the Docker community**
